@@ -101,10 +101,14 @@ async function updateCarousel(id) {
         console.error(error);
     }
 
-    function showInfo(breedInfo) {
-        if (infoDump.firstElementChild){
-            infoDump.children.length = 0;
+    function clearInfo() {
+        while (infoDump.firstElementChild){
+            infoDump.removeChild(infoDump.firstElementChild);
         }
+    }
+
+    function showInfo(breedInfo) {
+        clearInfo();
         const frag = new DocumentFragment();
         // h1 with cat's name
         frag.appendChild(Object.assign(document.createElement("h1"), {id: "info-header", textContent: `Information on the ${breedInfo.name}`}));
