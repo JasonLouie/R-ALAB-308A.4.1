@@ -37,16 +37,21 @@ const requestOptions = {
 
 async function initialLoad() {
     try {
-        const response = await fetch("https://api.thecatapi.com/v1/images/search?limit=5&format=json&has_breeds=true", requestOptions);
+        const response = await fetch("https://api.thecatapi.com/v1/breeds/", requestOptions);
         if (!response.ok){
             throw `Response status: ${response.status}`;
         }
-        const result = await response.json();
+
+        let catBreeds = await response.json();
+
+        // Only include breeds that have an image
+        catBreeds = catBreeds.filter(entry => entry.image?.url != null);
 
         // Create the options and append them to breedSelect
         const frag = new DocumentFragment();
-        result.forEach(element => {
-            frag.appendChild(Object.assign(document.createElement("option"), {value: element.breeds[0].id, textContent: element.breeds[0].name}))
+
+        catBreeds.forEach(catBreed => {
+            frag.appendChild(Object.assign(document.createElement("option"), {value: catBreed.id, textContent: catBreed.name}));
         });
         breedSelect.appendChild(frag);
 
