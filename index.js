@@ -19,6 +19,22 @@ const headers = new Headers({
     "x-api-key": API_KEY
 });
 
+axios.defaults.baseURL = "https://api.thecatapi.com/v1";
+axios.defaults.headers = headers;
+axios.interceptors.request.use(request => {
+    request.metadata = request.metadata || {};
+    request.metadata.start_time = new Date();
+    console.log("Request started at: ", request.metadata.start_time.toLocaleTimeString("en-US"));
+    return request;
+})
+
+axios.interceptors.response.use(function onFullfilled(response) {
+    // Calculate how long the request took
+    const timeElapsed =  new Date().getTime() - response.config.metadata.start_time.getTime();
+    console.log(`Request took ${timeElapsed} ms.`);
+    return response;
+})
+
 /**
  * 1. Create an async function "initialLoad" that does the following:
  * - Retrieve a list of breeds from the cat API using fetch().
@@ -28,15 +44,9 @@ const headers = new Headers({
  * This function should execute immediately.
  */
 
-const requestOptions = {
-    method: 'GET',
-    headers: headers,
-    redirect: 'follow'
-};
-
 async function initialLoad() {
     try {
-        const response = await axios.get("https://api.thecatapi.com/v1/breeds/", requestOptions);
+        const response = await axios.get("/breeds");
 
         // Only include breeds that have an image
         const catBreeds = response.data.filter(entry => entry.image?.url != null);
@@ -72,6 +82,7 @@ initialLoad();
  * - Add a call to this function to the end of your initialLoad function above to create the initial carousel.
  */
 
+// Add event listener to breedSelect
 breedSelect.addEventListener("change", async (e) => {
     if (e.target === e.currentTarget){
         updateCarousel(e.target.value);
@@ -80,7 +91,7 @@ breedSelect.addEventListener("change", async (e) => {
 
 async function updateCarousel(id) {
     try {
-        const response = await axios.get(`https://api.thecatapi.com/v1/images/search?breed_ids=${id}&limit=10&format=json`, requestOptions);
+        const response = await axios.get(`/images/search?breed_ids=${id}&limit=10&format=json`);
 
         clear(); // Clear carousel before adding entries.
 

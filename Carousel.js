@@ -28,7 +28,7 @@ export function appendCarousel(element) {
     const carousel = document.querySelector("#carouselInner");
 
     const activeItem = document.querySelector(".carousel-item.active");
-    if (!activeItem) element.classList.add("active");
+    // if (!activeItem) element.classList.add("active"); // Temporarily commented out because this keeps toggling non-stop!
 
     carousel.appendChild(element);
 }
