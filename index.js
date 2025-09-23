@@ -1,6 +1,5 @@
 import { appendCarousel, clear, createCarouselItem, start } from "./Carousel.js";
 
-
 // import axios from "axios";
 
 // The breed selection input element.
@@ -37,19 +36,19 @@ const requestOptions = {
 
 async function initialLoad() {
     try {
-        const response = await fetch("https://api.thecatapi.com/v1/images/search?limit=5&format=json&has_breeds=true", requestOptions);
-        if (!response.ok){
-            throw `Response status: ${response.status}`;
-        }
-        const result = await response.json();
+        const response = await axios.get("https://api.thecatapi.com/v1/images/search?limit=5&format=json&has_breeds=true", requestOptions);
 
         // Create the options and append them to breedSelect
         const frag = new DocumentFragment();
-        result.forEach(element => {
+
+        response.data.forEach(element => {
             frag.appendChild(Object.assign(document.createElement("option"), {value: element.breeds[0].id, textContent: element.breeds[0].name}))
         });
+
+        // Add frag to breedSelect
         breedSelect.appendChild(frag);
 
+        // Update the carousel using the current value
         updateCarousel(breedSelect.value);
     } catch (error) {
         console.error(error);
@@ -81,30 +80,30 @@ breedSelect.addEventListener("change", async (e) => {
 
 async function updateCarousel(id) {
     try {
-        const response = await fetch(`https://api.thecatapi.com/v1/images/search?breed_ids=${id}&limit=10&format=json`, requestOptions);
-        if (!response.ok){
-            throw `Response status: ${response.status}`;
-        }
-        const result = await response.json();
+        const response = await axios.get(`https://api.thecatapi.com/v1/images/search?breed_ids=${id}&limit=10&format=json`, requestOptions);
 
         clear(); // Clear carousel before adding entries.
 
-        result.forEach(catResult => {
+        response.data.forEach(catResult => {
             appendCarousel(createCarouselItem(catResult.url, `Picture of ${catResult.breeds[0].name}`, catResult.id));
         })
 
-        start();
+        start(); // Start the carousel
 
-        showInfo(result[0].breeds[0]); // Only need to choose the breeds array's first object from the first result since these should all be identical (same breed, same info)
+        showInfo(response.data[0].breeds[0]); // Only need to choose the breeds array's first object from the first result since these should all be identical (same breed, same info)
 
     } catch (error) {
         console.error(error);
     }
 
-    function showInfo(breedInfo) {
-        if (infoDump.firstElementChild){
-            infoDump.children.length = 0;
+    function clearInfo() {
+        while (infoDump.firstElementChild){
+            infoDump.removeChild(infoDump.firstElementChild);
         }
+    }
+
+    function showInfo(breedInfo) {
+        clearInfo();
         const frag = new DocumentFragment();
         // h1 with cat's name
         frag.appendChild(Object.assign(document.createElement("h1"), {id: "info-header", textContent: `Information on the ${breedInfo.name}`}));
