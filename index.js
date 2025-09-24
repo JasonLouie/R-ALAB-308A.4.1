@@ -125,8 +125,14 @@ breedSelect.addEventListener("change", (e) => {
     }
 });
 
+// Removes infoDump's children
+function clearInfo() {
+    while (infoDump.firstElementChild) {
+        infoDump.removeChild(infoDump.firstElementChild);
+    }
+}
 
-
+// Update the carousel based on the id of the selector
 async function updateCarousel(id) {
     try {
         const response = await axios.get(`/images/search?breed_ids=${id}&limit=10&format=json`);
@@ -137,12 +143,6 @@ async function updateCarousel(id) {
 
     } catch (error) {
         console.error(error);
-    }
-
-    function clearInfo() {
-        while (infoDump.firstElementChild) {
-            infoDump.removeChild(infoDump.firstElementChild);
-        }
     }
     
     function showInfo(breedInfo) {
@@ -273,6 +273,7 @@ async function getFavResults() {
 async function getFavourites(e) {
     if (e.target === e.currentTarget) {
         const results = await getFavResults()
+        clearInfo();
         createCarousel(results.data, "favourites");
     }
 }
