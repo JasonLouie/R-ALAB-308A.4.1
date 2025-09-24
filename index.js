@@ -14,29 +14,28 @@ const getFavouritesBtn = document.getElementById("getFavouritesBtn");
 // Step 0: Store your API key here for reference and easy access.
 const API_KEY = "live_26OZzQzspCDg3NRVEg1M6MyyM8M3uR8jYNv7lMreGGOyBr9B3cYKhgYe3ieAsrWm";
 
-const headers = new Headers({
-    "Content-Type": "application/json",
-    "x-api-key": API_KEY
-});
+// Store all info on breeds with images for updating show info
+let catBreeds = [];
 
 axios.defaults.baseURL = "https://api.thecatapi.com/v1";
-axios.defaults.headers = headers;
+axios.defaults.headers.common["x-api-key"] = API_KEY;
 axios.defaults.onDownloadProgress = function (progressEvent) {
-    progressBar.style.width = "0%";
     updateProgress(progressEvent);
 }
 axios.interceptors.request.use(request => {
     request.metadata = request.metadata || {};
     request.metadata.start_time = new Date();
-    console.log("Request started at: ", request.metadata.start_time.toLocaleTimeString("en-US"));
+    progressBar.style.width = "0%";
+    console.log(`Request started at: ${request.metadata.start_time.toLocaleTimeString("en-US")}`);
     document.body.style.cursor = "progress";
     return request;
 });
 
 axios.interceptors.response.use(function onFullfilled(response) {
-    document.body.style.removeProperty("cursor");
+    document.body.style.cursor = "default";
+    progressBar.style.width = "100%";
     // Calculate how long the request took
-    const timeElapsed =  new Date().getTime() - response.config.metadata.start_time.getTime();
+    const timeElapsed = new Date().getTime() - response.config.metadata.start_time.getTime();
     console.log(`Request took ${timeElapsed} ms.`);
     return response;
 });
@@ -55,13 +54,28 @@ async function initialLoad() {
         const response = await axios.get("/breeds");
 
         // Only include breeds that have an image
-        const catBreeds = response.data.filter(entry => entry.image?.url != null);
+        catBreeds = response.data.filter(entry => entry.image?.url != null);
+
+        // // Used to verify that the breeds included have an image.url
+        // console.log("Initial length: ", response.data.length);
+        // let counter = 0;
+        // for (const breed of catBreeds){
+        //     if (breed.image){
+        //         console.log(`The ${breed.name} has an image with obj of`, breed.image);
+        //         counter ++;
+        //     } else {
+        //         console.log(`The ${breed.name} does not have an image!`);
+        //     }
+        // }
+        // console.log(counter);
+
+        // console.log("filtered length: ", catBreeds.length);
 
         // Create the options and append them to breedSelect
         const frag = new DocumentFragment();
 
         catBreeds.forEach(catBreed => {
-            frag.appendChild(Object.assign(document.createElement("option"), {value: catBreed.id, textContent: catBreed.name}));
+            frag.appendChild(Object.assign(document.createElement("option"), { value: catBreed.id, textContent: catBreed.name }));
         });
         breedSelect.appendChild(frag);
 
@@ -88,24 +102,39 @@ initialLoad();
  * - Add a call to this function to the end of your initialLoad function above to create the initial carousel.
  */
 
+function createCarousel(data, type) {
+    clear();
+
+    if (data.length > 0) {
+        if (type === "breed") {
+            data.forEach(catResult => {
+                appendCarousel(createCarouselItem(catResult.url, `Picture of ${catResult.breeds[0].name}`, catResult.id));
+            });
+        } else if (type === "favourites") {
+            data.forEach(catResult => {
+                appendCarousel(createCarouselItem(catResult.image.url, "Favourite Cat Picture", catResult.image_id));
+            });
+        } else { // Type isn't defined
+            return;
+        }
+        start();
+    }
+}
+
 // Add event listener to breedSelect
-breedSelect.addEventListener("change", async (e) => {
-    if (e.target === e.currentTarget){
+breedSelect.addEventListener("change", (e) => {
+    if (e.target === e.currentTarget) {
         updateCarousel(e.target.value);
     }
 });
+
+
 
 async function updateCarousel(id) {
     try {
         const response = await axios.get(`/images/search?breed_ids=${id}&limit=10&format=json`);
 
-        clear(); // Clear carousel before adding entries.
-
-        response.data.forEach(catResult => {
-            appendCarousel(createCarouselItem(catResult.url, `Picture of ${catResult.breeds[0].name}`, catResult.id));
-        })
-
-        start(); // Start the carousel
+        createCarousel(response.data, "breed");
 
         showInfo(response.data[0].breeds[0]); // Only need to choose the breeds array's first object from the first result since these should all be identical (same breed, same info)
 
@@ -114,35 +143,35 @@ async function updateCarousel(id) {
     }
 
     function clearInfo() {
-        while (infoDump.firstElementChild){
+        while (infoDump.firstElementChild) {
             infoDump.removeChild(infoDump.firstElementChild);
         }
     }
-
+    
     function showInfo(breedInfo) {
         clearInfo();
         const frag = new DocumentFragment();
         // h1 with cat's name
-        frag.appendChild(Object.assign(document.createElement("h1"), {id: "info-header", textContent: `Information on the ${breedInfo.name}`}));
-
+        frag.appendChild(Object.assign(document.createElement("h1"), { id: "info-header", textContent: `Information on the ${breedInfo.name}` }));
+    
         // p element with cat's origin
-        frag.appendChild(Object.assign(document.createElement("p"), {id: "cat-origin", innerHTML: `<strong>Origin:</strong> ${breedInfo.origin}`}));
-
+        frag.appendChild(Object.assign(document.createElement("p"), { id: "cat-origin", innerHTML: `<strong>Origin:</strong> ${breedInfo.origin}` }));
+    
         // p element with cat's weight (pounds)
-        frag.appendChild(Object.assign(document.createElement("p"), {id: "cat-weight", innerHTML: `<strong>Weight:</strong> ${breedInfo.weight.imperial} lbs`}));
-
+        frag.appendChild(Object.assign(document.createElement("p"), { id: "cat-weight", innerHTML: `<strong>Weight:</strong> ${breedInfo.weight.imperial} lbs` }));
+    
         // p element with cat's life span (years)
-        frag.appendChild(Object.assign(document.createElement("p"), {id: "cat-desc", innerHTML: `<strong>Life Span:</strong> ${breedInfo.life_span} years`}));
-
+        frag.appendChild(Object.assign(document.createElement("p"), { id: "cat-desc", innerHTML: `<strong>Life Span:</strong> ${breedInfo.life_span} years` }));
+    
         // p element with cat's temperament (listed as traits here)
-        frag.appendChild(Object.assign(document.createElement("p"), {id: "cat-traits", innerHTML: `<strong>Traits:</strong> ${breedInfo.temperament}`}));
-
+        frag.appendChild(Object.assign(document.createElement("p"), { id: "cat-traits", innerHTML: `<strong>Traits:</strong> ${breedInfo.temperament}` }));
+    
         // p element with cat description
-        frag.appendChild(Object.assign(document.createElement("p"), {id: "cat-desc", textContent: breedInfo.description}));
-
+        frag.appendChild(Object.assign(document.createElement("p"), { id: "cat-desc", textContent: breedInfo.description }));
+    
         // p element with link to more info (wikipedia link)
-        frag.appendChild(Object.assign(document.createElement("p"), {id: "wikipedia", innerHTML: `Click <a id="link" href=${breedInfo.wikipedia_url} target="_blank">here</a> to learn more about the ${breedInfo.name} cat.`}));
-        
+        frag.appendChild(Object.assign(document.createElement("p"), { id: "wikipedia", innerHTML: `Click <a id="link" href=${breedInfo.wikipedia_url} target="_blank">here</a> to learn more about the ${breedInfo.name} cat.` }));
+    
         // Append frag to infoDump
         infoDump.appendChild(frag);
     }
@@ -184,7 +213,7 @@ async function updateCarousel(id) {
  */
 
 async function updateProgress(progress_event) {
-    console.log(progress_event);
+    console.log("ProgressEvent obj:\n", progress_event);
 }
 
 /**
@@ -203,8 +232,28 @@ async function updateProgress(progress_event) {
  *   you delete that favourite using the API, giving this function "toggle" functionality.
  * - You can call this function by clicking on the heart at the top right of any image.
  */
+
 export async function favourite(imgId) {
-    // your code here
+    const getFavResponse = await getFavResults();
+    const favId = findFavImagebyId();
+
+    if (favId === -1) { // Image is not favorited, so must be unfavorited
+        const body = { image_id: imgId };
+        const addFavResponse = await axios.post("/favourites", body);
+        console.log("Added\n", addFavResponse);
+    } else {
+        const deleteFavResponse = await axios.delete(`/favourites/${favId}`);
+        console.log("Deleted\n", deleteFavResponse);
+    }
+
+    function findFavImagebyId() {
+        for (const response of getFavResponse.data) {
+            if (response.image_id == imgId) {
+                return response.id;
+            }
+        }
+        return -1;
+    }
 }
 
 /**
@@ -216,6 +265,20 @@ export async function favourite(imgId) {
  *    If that isn't in its own function, maybe it should be so you don't have to
  *    repeat yourself in this section.
  */
+
+getFavouritesBtn.addEventListener("click", getFavourites);
+
+async function getFavResults() {
+    const getFavResponse = await axios.get("/favourites");
+    return getFavResponse;
+}
+
+async function getFavourites(e) {
+    if (e.target === e.currentTarget) {
+        const results = await getFavResults()
+        createCarousel(results.data, "favourites");
+    }
+}
 
 /**
  * 10. Test your site, thoroughly!
