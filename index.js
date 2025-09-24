@@ -111,10 +111,13 @@ function createCarousel(data, type) {
             data.forEach(catResult => {
                 appendCarousel(createCarouselItem(catResult.image.url, "Favourite Cat Picture", catResult.image_id));
             });
+            infoDump.appendChild(Object.assign(document.createElement("h1"), {textContent: "Viewing Favourite Cat Pics!"}));
         } else { // Type isn't defined
             return;
         }
         start();
+    } else {
+        infoDump.appendChild(Object.assign(document.createElement("h1"), {textContent: `${(type === "favourites") ? "User does not have any favourite cat pics." : `Error showing pictures of ${data[0].breeds[0].name}`}`}));
     }
 }
 
