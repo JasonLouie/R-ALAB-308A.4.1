@@ -234,21 +234,22 @@ async function updateProgress(progress_event) {
  */
 
 export async function favourite(imgId) {
-    const getFavResponse = await getFavResults();
+    const getFavResponse = await axios.get("/favourites");
     const favId = findFavImagebyId();
 
-    if (favId === -1) { // Image is not favorited, so must be unfavorited
+    if (favId === -1) { // Image is not favourited, so add image to favourites
         const body = { image_id: imgId };
         const addFavResponse = await axios.post("/favourites", body);
         console.log("Added\n", addFavResponse);
-    } else {
+    } else { // Image is already favourited, so remove image from favourites
         const deleteFavResponse = await axios.delete(`/favourites/${favId}`);
         console.log("Deleted\n", deleteFavResponse);
     }
 
+    // Iterate through the user's favourites to find out if the user already favourited the image.
     function findFavImagebyId() {
         for (const response of getFavResponse.data) {
-            if (response.image_id == imgId) {
+            if (response.image_id === imgId) {
                 return response.id;
             }
         }
@@ -268,16 +269,11 @@ export async function favourite(imgId) {
 
 getFavouritesBtn.addEventListener("click", getFavourites);
 
-async function getFavResults() {
-    const getFavResponse = await axios.get("/favourites");
-    return getFavResponse;
-}
-
 async function getFavourites(e) {
     if (e.target === e.currentTarget) {
-        const results = await getFavResults()
+        const favourites = await axios.get("/favourites");
         clearInfo();
-        createCarousel(results.data, "favourites");
+        createCarousel(favourites.data, "favourites");
     }
 }
 
