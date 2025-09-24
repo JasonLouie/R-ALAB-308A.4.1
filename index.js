@@ -14,9 +14,6 @@ const getFavouritesBtn = document.getElementById("getFavouritesBtn");
 // Step 0: Store your API key here for reference and easy access.
 const API_KEY = "live_26OZzQzspCDg3NRVEg1M6MyyM8M3uR8jYNv7lMreGGOyBr9B3cYKhgYe3ieAsrWm";
 
-// Store all info on breeds with images for updating show info
-let catBreeds = [];
-
 axios.defaults.baseURL = "https://api.thecatapi.com/v1";
 axios.defaults.headers.common["x-api-key"] = API_KEY;
 axios.defaults.onDownloadProgress = function (progressEvent) {
@@ -54,7 +51,7 @@ async function initialLoad() {
         const response = await axios.get("/breeds");
 
         // Only include breeds that have an image
-        catBreeds = response.data.filter(entry => entry.image?.url != null);
+        const catBreeds = response.data.filter(entry => entry.image?.url != null);
 
         // // Used to verify that the breeds included have an image.url
         // console.log("Initial length: ", response.data.length);
