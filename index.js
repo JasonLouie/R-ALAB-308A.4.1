@@ -21,19 +21,25 @@ const headers = new Headers({
 
 axios.defaults.baseURL = "https://api.thecatapi.com/v1";
 axios.defaults.headers = headers;
+axios.defaults.onDownloadProgress = function (progressEvent) {
+    progressBar.style.width = "0%";
+    updateProgress(progressEvent);
+}
 axios.interceptors.request.use(request => {
     request.metadata = request.metadata || {};
     request.metadata.start_time = new Date();
     console.log("Request started at: ", request.metadata.start_time.toLocaleTimeString("en-US"));
+    document.body.style.cursor = "progress";
     return request;
-})
+});
 
 axios.interceptors.response.use(function onFullfilled(response) {
+    document.body.style.removeProperty("cursor");
     // Calculate how long the request took
     const timeElapsed =  new Date().getTime() - response.config.metadata.start_time.getTime();
     console.log(`Request took ${timeElapsed} ms.`);
     return response;
-})
+});
 
 /**
  * 1. Create an async function "initialLoad" that does the following:
@@ -176,6 +182,10 @@ async function updateCarousel(id) {
  *   once or twice per request to this API. This is still a concept worth familiarizing yourself
  *   with for future projects.
  */
+
+async function updateProgress(progress_event) {
+    console.log(progress_event);
+}
 
 /**
  * 7. As a final element of progress indication, add the following to your axios interceptors:
